@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    container_name: frontend
+    restart: unless-stopped
+
+  checkout-service:
+    build:
+      context: ./services/checkout-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    container_name: checkout-service
+    restart: unless-stopped
+
+  estoque-service:
+    build:
+      context: ./services/estoque-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    container_name: estoque-service
+    restart: unless-stopped
+
+  pagamento-service:
+    build:
+      context: ./services/pagamento-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    container_name: pagamento-service
+    restart: unless-stopped
+
+  notificacao-service:
+    build:
+      context: ./services/notificacao-service
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    container_name: notificacao-service
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: unless-stopped
+    # NOTA: O RabbitMQ é provisionado como infraestrutura.
+    # Nenhum serviço se conecta a ele nesta fase do projeto.
+    # As integrações de mensageria serão implementadas futuramente.
