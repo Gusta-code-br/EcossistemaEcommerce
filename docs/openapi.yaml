@@ -1,0 +1,188 @@
+openapi: "3.0.3"
+info:
+  title: "E-Commerce Microsserviços — N1"
+  description: "Documentação dos contratos de API do checkout-service e estoque-service"
+  version: "1.0.0"
+
+tags:
+  - name: Checkout
+    description: "Gerenciamento de pedidos"
+  - name: Estoque
+    description: "Consulta e disponibilidade de produtos"
+
+paths:
+
+  # ── Checkout Service (porta 3001) ─────────────────────────────────────────
+
+  /pedidos:
+    post:
+      tags: [Checkout]
+      summary: "Cria um novo pedido"
+      description: "Antes de criar o pedido, o checkout consulta o estoque-service de forma síncrona para verificar disponibilidade de cada item."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PedidoInput"
+            example:
+              cliente: "Maria Souza"
+              email: "maria@exemplo.com"
+              itens:
+                - produtoId: "prod-001"
+                  nome: "Teclado Mecânico RGB Pro"
+                  quantidade: 1
+                  preco: 459.90
+      responses:
+        "201":
+          description: "Pedido criado com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pedido"
+        "400":
+          description: "Body inválido ou itens ausentes"
+        "422":
+          description: "Estoque insuficiente ou produto não encontrado"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Erro"
+              example:
+                erro: "Estoque insuficiente para 'Headset 7.1 Surround'"
+                disponivel: 0
+                solicitado: 1
+        "503":
+          description: "Estoque-service indisponível"
+
+    get:
+      tags: [Checkout]
+      summary: "Lista todos os pedidos"
+      responses:
+        "200":
+          description: "Lista de pedidos registrados"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  pedidos:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Pedido"
+
+  # ── Estoque Service (porta 3002) ──────────────────────────────────────────
+
+  /estoque:
+    get:
+      tags: [Estoque]
+      summary: "Lista todos os itens em estoque"
+      responses:
+        "200":
+          description: "Lista completa do estoque"
+
+  /produtos/{id}/disponibilidade:
+    get:
+      tags: [Estoque]
+      summary: "Verifica disponibilidade de um produto"
+      description: "Endpoint chamado pelo checkout-service antes de finalizar um pedido."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID do produto (ex: prod-001)"
+          schema:
+            type: string
+            example: "prod-001"
+        - name: quantidade
+          in: query
+          required: true
+          description: "Quantidade desejada"
+          schema:
+            type: integer
+            example: 2
+      responses:
+        "200":
+          description: "Resultado da verificação"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Disponibilidade"
+              examples:
+                disponivel:
+                  summary: "Produto disponível"
+                  value:
+                    produtoId: "prod-001"
+                    nome: "Teclado Mecânico RGB Pro"
+                    quantidadeSolicitada: 2
+                    quantidadeDisponivel: 14
+                    disponivel: true
+                indisponivel:
+                  summary: "Sem estoque"
+                  value:
+                    produtoId: "prod-004"
+                    nome: "Headset 7.1 Surround"
+                    quantidadeSolicitada: 1
+                    quantidadeDisponivel: 0
+                    disponivel: false
+        "400":
+          description: "Quantidade inválida ou ausente"
+        "404":
+          description: "Produto não encontrado"
+
+# ── Schemas reutilizáveis ────────────────────────────────────────────────────
+
+components:
+  schemas:
+
+    ItemPedido:
+      type: object
+      required: [produtoId, quantidade]
+      properties:
+        produtoId:  { type: string,  example: "prod-001" }
+        nome:       { type: string,  example: "Teclado Mecânico RGB Pro" }
+        quantidade: { type: integer, example: 1 }
+        preco:      { type: number,  example: 459.90 }
+
+    PedidoInput:
+      type: object
+      required: [cliente, email, itens]
+      properties:
+        cliente: { type: string, example: "Maria Souza" }
+        email:   { type: string, example: "maria@exemplo.com" }
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemPedido"
+
+    Pedido:
+      type: object
+      properties:
+        id:        { type: string,  example: "PED-0003" }
+        cliente:   { type: string,  example: "Maria Souza" }
+        email:     { type: string,  example: "maria@exemplo.com" }
+        status:    { type: string,  example: "criado" }
+        total:     { type: number,  example: 459.90 }
+        criadoEm: { type: string,  format: date-time }
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemPedido"
+
+    Disponibilidade:
+      type: object
+      properties:
+        produtoId:            { type: string  }
+        nome:                 { type: string  }
+        quantidadeSolicitada: { type: integer }
+        quantidadeDisponivel: { type: integer }
+        disponivel:           { type: boolean }
+
+    Erro:
+      type: object
+      properties:
+        erro:       { type: string }
+        disponivel: { type: integer }
+        solicitado: { type: integer }
