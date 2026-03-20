@@ -18,6 +18,11 @@ services:
       - "3001:3001"
     container_name: checkout-service
     restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   estoque-service:
     build:
@@ -36,6 +41,11 @@ services:
       - "3003:3003"
     container_name: pagamento-service
     restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   notificacao-service:
     build:
@@ -56,6 +66,8 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     restart: unless-stopped
-    # NOTA: O RabbitMQ é provisionado como infraestrutura.
-    # Nenhum serviço se conecta a ele nesta fase do projeto.
-    # As integrações de mensageria serão implementadas futuramente.
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
