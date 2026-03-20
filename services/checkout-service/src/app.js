@@ -5,6 +5,7 @@ const fs = require("fs");
 const yaml = require("js-yaml");
 const swaggerUi = require("swagger-ui-express");
 
+const { conectar } = require("./rabbitmq/publisher");
 const healthRoutes = require("./routes/health.routes");
 const infoRoutes = require("./routes/info.routes");
 const pedidoRoutes = require("./routes/pedido.routes");
@@ -32,5 +33,6 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[checkout-service] Rodando na porta ${PORT}`);
-  console.log(`[checkout-service] Swagger em http://localhost:${PORT}/api-docs`); // ← atualizar
+  console.log(`[checkout-service] Swagger em http://localhost:${PORT}/api-docs`);
+  conectar();
 });

@@ -1,5 +1,6 @@
 const http = require("http");
 const pedidosMock = require("../data/pedidos.mock");
+const { publicarPedidoCriado } = require("../rabbitmq/publisher");
 
 let contador = pedidosMock.length + 1;
 
@@ -67,6 +68,8 @@ async function criarPedido(req, res) {
 
   pedidosMock.push(novoPedido);
   console.log(`[checkout] Pedido criado: ${novoPedido.id}`);
+
+  publicarPedidoCriado(novoPedido);
 
   return res.status(201).json(novoPedido);
 }

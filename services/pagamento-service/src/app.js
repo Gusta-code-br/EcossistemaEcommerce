@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
+const { iniciarConsumidor } = require("./rabbitmq/consumer");
 const healthRoutes = require("./routes/health.routes");
 const infoRoutes = require("./routes/info.routes");
 const pagamentoRoutes = require("./routes/pagamento.routes");
@@ -21,5 +22,5 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[pagamento-service] Rodando na porta ${PORT}`);
-  console.log(`[pagamento-service] AVISO: Serviço isolado — sem integrações nesta fase`);
+  iniciarConsumidor();
 });
