@@ -18,6 +18,8 @@ services:
       - "3001:3001"
     container_name: checkout-service
     restart: unless-stopped
+    volumes:
+      - ./docs:/docs
     environment:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
@@ -32,6 +34,8 @@ services:
       - "3002:3002"
     container_name: estoque-service
     restart: unless-stopped
+    volumes:
+      - ./docs:/docs
 
   pagamento-service:
     build:
@@ -55,6 +59,12 @@ services:
       - "3004:3004"
     container_name: notificacao-service
     restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NOTIFICACAO_MAX_RETRIES: "3"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   rabbitmq:
     image: rabbitmq:3.12-management
