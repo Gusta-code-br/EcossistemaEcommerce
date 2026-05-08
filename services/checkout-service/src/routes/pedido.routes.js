@@ -4,5 +4,6 @@ const pedidoController = require("../controllers/pedido.controller");
 
 router.post("/pedidos", pedidoController.criarPedido);
 router.get("/pedidos", pedidoController.listarPedidos);
+router.get("/circuit-breaker/status", pedidoController.statusCircuitBreaker);
 
 module.exports = router;

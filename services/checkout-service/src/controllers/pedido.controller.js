@@ -1,11 +1,14 @@
 const http = require("http");
 const pedidosMock = require("../data/pedidos.mock");
 const { publicarPedidoCriado } = require("../rabbitmq/publisher");
+const CircuitBreaker = require("../circuit-breaker");
 
 let contador = pedidosMock.length + 1;
 
-const ESTOQUE_HOST = "localhost";
+const ESTOQUE_HOST = process.env.ESTOQUE_HOST || "estoque-service";
 const ESTOQUE_PORT = 3002;
+
+const estoqueBreaker = new CircuitBreaker({ threshold: 3, timeout: 10000 });
 
 function consultarDisponibilidade(produtoId, quantidade) {
   return new Promise((resolve, reject) => {
@@ -15,7 +18,18 @@ function consultarDisponibilidade(produtoId, quantidade) {
     const req = http.request(options, (res) => {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
+      res.on("end", () => {
+        try {
+          resolve({ status: res.statusCode, body: JSON.parse(data) });
+        } catch {
+          reject(new Error("Resposta inválida do estoque-service"));
+        }
+      });
+    });
+
+    req.setTimeout(3000, () => {
+      req.destroy();
+      reject(new Error("Timeout ao consultar estoque-service"));
     });
 
     req.on("error", reject);
@@ -30,15 +44,14 @@ async function criarPedido(req, res) {
     return res.status(400).json({ erro: "Campo 'itens' é obrigatório." });
   }
 
-  // Consulta o estoque para cada item antes de criar o pedido
   try {
     for (const item of itens) {
-      const { status, body } = await consultarDisponibilidade(item.produtoId, item.quantidade);
+      const { status, body } = await estoqueBreaker.execute(() =>
+        consultarDisponibilidade(item.produtoId, item.quantidade)
+      );
 
       if (status === 404) {
-        return res.status(422).json({
-          erro: `Produto '${item.produtoId}' não encontrado no estoque.`,
-        });
+        return res.status(422).json({ erro: `Produto '${item.produtoId}' não encontrado no estoque.` });
       }
 
       if (!body.disponivel) {
@@ -52,8 +65,15 @@ async function criarPedido(req, res) {
       console.log(`[checkout] Estoque OK: ${item.produtoId} — ${body.quantidadeDisponivel} disponíveis`);
     }
   } catch (err) {
-    console.error("[checkout] Falha ao consultar estoque:", err.message);
-    return res.status(503).json({ erro: "Serviço de estoque indisponível." });
+    const status = estoqueBreaker.getStatus();
+    const aberto = status.state === "OPEN";
+    console.error(`[checkout] Falha ao consultar estoque (circuit: ${status.state}):`, err.message);
+    return res.status(503).json({
+      erro: aberto
+        ? "Circuit Breaker ABERTO — estoque-service indisponível. Tente novamente em breve."
+        : "Serviço de estoque indisponível.",
+      circuitBreaker: status,
+    });
   }
 
   const novoPedido = {
@@ -75,10 +95,11 @@ async function criarPedido(req, res) {
 }
 
 function listarPedidos(req, res) {
-  return res.json({
-    total: pedidosMock.length,
-    pedidos: pedidosMock,
-  });
+  return res.json({ total: pedidosMock.length, pedidos: pedidosMock });
 }
 
-module.exports = { criarPedido, listarPedidos };
+function statusCircuitBreaker(req, res) {
+  return res.json({ circuitBreaker: estoqueBreaker.getStatus() });
+}
+
+module.exports = { criarPedido, listarPedidos, statusCircuitBreaker };
