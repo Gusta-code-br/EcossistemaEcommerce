@@ -32,9 +32,12 @@ function verificarDisponibilidade(req, res) {
     });
   }
 
+  console.log(`[estoque] Verificando disponibilidade — produtoId: ${id} | quantidade: ${quantidade}`);
+
   const item = estoqueMock.find((i) => i.produtoId === id);
 
   if (!item) {
+    console.warn(`[estoque] Produto não encontrado — produtoId: ${id}`);
     return res.status(404).json({
       disponivel: false,
       erro: "Produto não encontrado",
@@ -42,12 +45,15 @@ function verificarDisponibilidade(req, res) {
     });
   }
 
+  const disponivel = item.disponivel >= quantidade;
+  console.log(`[estoque] Disponibilidade ${id}: ${disponivel ? "OK" : "INSUFICIENTE"} — disponível: ${item.disponivel}, solicitado: ${quantidade}`);
+
   return res.status(200).json({
     produtoId: item.produtoId,
     nome: item.nome,
     quantidadeSolicitada: quantidade,
     quantidadeDisponivel: item.disponivel,
-    disponivel: item.disponivel >= quantidade,
+    disponivel,
   });
 }
 

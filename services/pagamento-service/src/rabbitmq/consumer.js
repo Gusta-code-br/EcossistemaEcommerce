@@ -34,9 +34,10 @@ async function iniciarConsumidor() {
 }
 
 function processarPagamento(pedido) {
+  console.log(`[pagamento] Processando pedido via fila — id: ${pedido.id} | valor: R$ ${pedido.total}`);
   const aprovado = Math.random() > 0.2;
   const status = aprovado ? "aprovado" : "recusado";
-  console.log(`[pagamento] Pedido ${pedido.id} — pagamento ${status} (valor: R$ ${pedido.total})`);
+  console.log(`[pagamento] Pedido ${pedido.id} — pagamento ${status}`);
 }
 
 module.exports = { iniciarConsumidor };

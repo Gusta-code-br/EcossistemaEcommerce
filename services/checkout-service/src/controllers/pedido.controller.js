@@ -44,6 +44,15 @@ async function criarPedido(req, res) {
     return res.status(400).json({ erro: "Campo 'itens' é obrigatório." });
   }
 
+  for (const item of itens) {
+    const qtd = Number(item.quantidade);
+    if (!item.produtoId || !Number.isInteger(qtd) || qtd <= 0) {
+      return res.status(400).json({ erro: "Cada item deve ter 'produtoId' (string) e 'quantidade' (inteiro positivo)." });
+    }
+  }
+
+  console.log(`[checkout] Iniciando pedido — cliente: ${cliente || "Anônimo"} | itens: ${itens.length}`);
+
   try {
     for (const item of itens) {
       const { status, body } = await estoqueBreaker.execute(() =>

@@ -30,5 +30,5 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[estoque-service] Rodando na porta ${PORT}`);
-  console.log(`[estoque-service] Swagger em http://localhost:${PORT}/api-docs`); // ← trocar o aviso por isso
+  console.log(`[estoque-service] Swagger em http://localhost:${PORT}/api-docs`);
 });

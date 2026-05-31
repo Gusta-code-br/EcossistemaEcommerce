@@ -5,7 +5,12 @@ let contador = notificacoesMock.length + 1;
 function simularNotificacao(req, res) {
   const { canal, tipo, destinatario, conteudo } = req.body;
 
-  // Retorna resposta mockada — sem consumir fila, sem DLQ, sem provedor real
+  if (!destinatario) {
+    return res.status(400).json({ erro: "Campo 'destinatario' é obrigatório." });
+  }
+
+  console.log(`[notificacao] Simulando notificação — canal: ${canal || "email"} | tipo: ${tipo || "generica"} | destinatario: ${destinatario}`);
+
   const registro = {
     notificacaoId: `NOT-${String(contador++).padStart(5, "0")}`,
     canal: canal || "email",
@@ -18,6 +23,7 @@ function simularNotificacao(req, res) {
   };
 
   notificacoesMock.push(registro);
+  console.log(`[notificacao] Notificação ${registro.notificacaoId} registrada — destinatario: ${destinatario} | status: ${registro.status}`);
 
   return res.status(201).json(registro);
 }

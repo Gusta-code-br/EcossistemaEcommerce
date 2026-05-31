@@ -5,13 +5,22 @@ let contador = pagamentosMock.length + 1;
 function simularPagamento(req, res) {
   const { pedidoId, valor, metodo } = req.body;
 
-  // Simula aprovação com 80% de chance — sem consumir filas, sem chamar outros serviços
+  if (!pedidoId) {
+    return res.status(400).json({ erro: "Campo 'pedidoId' é obrigatório." });
+  }
+  const valorNumerico = parseFloat(valor);
+  if (!valor || isNaN(valorNumerico) || valorNumerico <= 0) {
+    return res.status(400).json({ erro: "Campo 'valor' deve ser um número positivo." });
+  }
+
+  console.log(`[pagamento] Simulando pagamento — pedidoId: ${pedidoId} | valor: R$ ${valorNumerico} | metodo: ${metodo || "nao_informado"}`);
+
   const aprovado = Math.random() > 0.2;
 
   const registro = {
     transacaoId: `TXN-${String(contador++).padStart(5, "0")}`,
-    pedidoId: pedidoId || "PED-DESCONHECIDO",
-    valor: parseFloat(valor) || 0,
+    pedidoId,
+    valor: valorNumerico,
     metodo: metodo || "nao_informado",
     status: aprovado ? "aprovado" : "recusado",
     mensagem: aprovado
@@ -22,6 +31,7 @@ function simularPagamento(req, res) {
   };
 
   pagamentosMock.push(registro);
+  console.log(`[pagamento] Transação ${registro.transacaoId} — pedido ${pedidoId}: ${registro.status}`);
 
   const statusHttp = aprovado ? 200 : 422;
   return res.status(statusHttp).json(registro);

@@ -13,10 +13,12 @@ router.get("/info", (req, res) => {
       "POST /notificacoes/simular",
       "GET  /notificacoes",
     ],
-    aviso: "Serviço isolado. Nenhuma integração com outros serviços foi implementada nesta fase.",
+    integracoesAtivas: [
+      "Consome fila 'notificacao.pedido_criado' do RabbitMQ (exchange pedido.criado)",
+      "Dead Letter Queue configurada (DLX: notificacao.dlx / DLQ: notificacao.dlq) com até 3 tentativas",
+    ],
     integracoesFuturas: [
-      "Consumir fila 'notificacoes' do RabbitMQ",
-      "Implementar Dead Letter Queue (DLQ) para reprocessamento de falhas",
+      "Consumir eventos de pagamento.aprovado para notificar confirmação ao cliente",
       "Integrar com provedores reais de e-mail (SendGrid, SES)",
     ],
   });

@@ -13,10 +13,12 @@ router.get("/info", (req, res) => {
       "POST /pagamentos/simular",
       "GET  /pagamentos",
     ],
-    aviso: "Serviço isolado. Nenhuma integração com outros serviços foi implementada nesta fase.",
+    integracoesAtivas: [
+      "Consome fila 'pagamento.pedido_criado' do RabbitMQ (exchange pedido.criado)",
+    ],
     integracoesFuturas: [
-      "Consumir fila 'pedidos' do RabbitMQ para processar pagamentos",
-      "Publicar evento pagamento.aprovado ou pagamento.recusado",
+      "Publicar evento pagamento.aprovado ou pagamento.recusado para o notificacao-service",
+      "Persistência em banco de dados",
     ],
   });
 });

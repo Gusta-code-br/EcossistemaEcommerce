@@ -12,11 +12,14 @@ router.get("/info", (req, res) => {
       "GET /info",
       "GET /estoque",
       "GET /estoque/:id",
+      "GET /produtos/:id/disponibilidade",
     ],
-    aviso: "Serviço isolado. Nenhuma integração com outros serviços foi implementada nesta fase.",
+    integracoesAtivas: [
+      "Responde consultas de disponibilidade do checkout-service via HTTP",
+    ],
     integracoesFuturas: [
-      "Receber chamadas do checkout-service para verificar disponibilidade",
       "Consumir eventos de pedidos para baixar estoque automaticamente",
+      "Persistência em banco de dados",
     ],
   });
 });

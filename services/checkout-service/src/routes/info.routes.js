@@ -12,11 +12,15 @@ router.get("/info", (req, res) => {
       "GET  /info",
       "POST /pedidos",
       "GET  /pedidos",
+      "GET  /circuit-breaker/status",
     ],
-    aviso: "Serviço isolado. Nenhuma integração com outros serviços foi implementada nesta fase.",
+    integracoesAtivas: [
+      "Consulta estoque-service via HTTP (com circuit breaker) antes de confirmar pedido",
+      "Publica evento pedido.criado no RabbitMQ (exchange fanout, persistente)",
+    ],
     integracoesFuturas: [
-      "Consultar estoque-service antes de confirmar pedido",
-      "Publicar evento pedido.criado no RabbitMQ",
+      "Publicar evento pagamento.recusado para compensação de estoque",
+      "Persistência em banco de dados",
     ],
   });
 });
